@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-server-pod
+  labels:
+    app: my-server
+spec:
+  containers:
+    - name: my-server-container
+      image: glibesyck/my-server:latest
+      ports:
+        - containerPort: 8000
