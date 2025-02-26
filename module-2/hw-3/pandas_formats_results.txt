@@ -1,0 +1,32 @@
+CSV:
+  Save time: 3.8665 seconds
+  Load time: 0.4101 seconds
+----------------------------------------
+Parquet:
+  Save time: 1.0880 seconds
+  Load time: 2.2134 seconds
+----------------------------------------
+HDF5:
+  Save time: 0.0587 seconds
+  Load time: 0.0302 seconds
+----------------------------------------
+Feather:
+  Save time: 0.1970 seconds
+  Load time: 0.0262 seconds
+----------------------------------------
+JSON:
+  Save time: 0.6491 seconds
+  Load time: 1.2576 seconds
+----------------------------------------
+NetCDF4:
+  Save time: 0.0259 seconds
+  Load time: 0.0137 seconds
+----------------------------------------
+NumPy (NPY):
+  Save time: 0.0076 seconds
+  Load time: 0.0093 seconds
+----------------------------------------
+Pickle:
+  Save time: 0.0129 seconds
+  Load time: 0.0090 seconds
+----------------------------------------
