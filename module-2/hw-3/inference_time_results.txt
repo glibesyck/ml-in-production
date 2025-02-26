@@ -1,0 +1,16 @@
+Single-threaded execution time: 10.4069 seconds
+Threading (Thread) execution time: 11.0708 seconds
+Threading (ThreadPoolExecutor) execution time: 9.3903 seconds
+Multiprocessing (Process) execution time: 39.7936 seconds
+Multiprocessing (Pool) execution time: 46.7265 seconds
+Multiprocessing (ProcessPoolExecutor) execution time: 46.4256 seconds
+AsyncIO execution time: 10.5944 seconds
+
+--- (NUM_TASKS: 100 -> 10)
+Single-threaded execution time: 1.1004 seconds
+Threading (Thread) execution time: 0.9522 seconds
+Threading (ThreadPoolExecutor) execution time: 0.9048 seconds
+Multiprocessing (Process) execution time: 4.7110 seconds
+Multiprocessing (Pool) execution time: 5.6488 seconds
+Multiprocessing (ProcessPoolExecutor) execution time: 5.4290 seconds
+AsyncIO execution time: 0.8645 seconds
