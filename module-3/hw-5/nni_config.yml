@@ -1,0 +1,13 @@
+experimentName: CNN_hyperparameter_search
+searchSpaceFile: search_space.json
+trialCommand: python CNN_model_nni.py
+trialConcurrency: 1
+maxTrialNumber: 20
+maxExperimentDuration: 1h
+tuner:
+  name: TPE
+  classArgs:
+    optimize_mode: maximize
+trainingService:
+  platform: local
+  useActiveGpu: true
