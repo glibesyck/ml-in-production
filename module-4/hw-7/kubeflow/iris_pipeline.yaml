@@ -1,0 +1,268 @@
+# PIPELINE DEFINITION
+# Name: iris-pipeline
+components:
+  comp-predict-on-test-data:
+    executorLabel: exec-predict-on-test-data
+    inputDefinitions:
+      artifacts:
+        model:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+        npy_data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        y_pred_file:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-prepare-data:
+    executorLabel: exec-prepare-data
+    outputDefinitions:
+      artifacts:
+        df_data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-train-test-split:
+    executorLabel: exec-train-test-split
+    inputDefinitions:
+      artifacts:
+        df_data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        npy_data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-training-basic-classifier:
+    executorLabel: exec-training-basic-classifier
+    inputDefinitions:
+      artifacts:
+        npy_data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        model:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+deploymentSpec:
+  executors:
+    exec-predict-on-test-data:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - predict_on_test_data
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.12.1'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'pandas' 'numpy'\
+          \ 'scikit-learn' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef predict_on_test_data(model: Input[Model], npy_data: Input[Dataset],\
+          \ y_pred_file: Output[Dataset]):\n    import pandas as pd\n    import numpy\
+          \ as np\n    import pickle\n    import os\n    import shutil\n\n    with\
+          \ open(f'{model.path}/model.pkl', 'rb') as f:\n        logistic_reg_model\
+          \ = pickle.load(f)\n\n    X_test = np.load(f'{npy_data.path}/X_test.npy',allow_pickle=True)\n\
+          \    y_pred = logistic_reg_model.predict(X_test)\n\n    if not os.path.exists(y_pred_file.path):\n\
+          \        os.makedirs(y_pred_file.path)\n\n    np.save(f'{y_pred_file.path}/y_pred.npy',\
+          \ y_pred)\n\n"
+        image: python:3.9
+    exec-prepare-data:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - prepare_data
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.12.1'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'pandas' 'numpy'\
+          \ 'scikit-learn' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef prepare_data(df_data: Output[Dataset]):\n    import pandas as\
+          \ pd\n    import os\n    from sklearn import datasets\n\n    # Load dataset\n\
+          \    iris = datasets.load_iris()\n    df = pd.DataFrame(iris.data, columns=iris.feature_names)\n\
+          \    df['species'] = iris.target\n    df = df.dropna()\n\n    if not os.path.exists(df_data.path):\n\
+          \        os.makedirs(df_data.path)\n\n    df.to_csv(f'{df_data.path}/final_df.csv',\
+          \ index=False)\n\n"
+        image: python:3.9
+    exec-train-test-split:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - train_test_split
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.12.1'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'pandas' 'numpy'\
+          \ 'scikit-learn' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef train_test_split(df_data: Input[Dataset], npy_data: Output[Dataset]):\
+          \    \n    import pandas as pd\n    import numpy as np\n    import os\n\
+          \    from sklearn.model_selection import train_test_split\n\n    final_data\
+          \ = pd.read_csv(f'{df_data.path}/final_df.csv')\n\n    target_column = 'species'\n\
+          \    X = final_data.loc[:, final_data.columns != target_column]\n    y =\
+          \ final_data.loc[:, final_data.columns == target_column]\n\n    X_train,\
+          \ X_test, y_train, y_test = train_test_split(X, y, test_size=0.3,stratify\
+          \ = y, random_state=47)\n\n    if not os.path.exists(npy_data.path):\n \
+          \       os.makedirs(npy_data.path)\n\n    np.save(f'{npy_data.path}/X_train.npy',\
+          \ X_train)\n    np.save(f'{npy_data.path}/X_test.npy', X_test)\n    np.save(f'{npy_data.path}/y_train.npy',\
+          \ y_train)\n    np.save(f'{npy_data.path}/y_test.npy', y_test)\n\n"
+        image: python:3.9
+    exec-training-basic-classifier:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - training_basic_classifier
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.12.1'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'pandas' 'numpy'\
+          \ 'scikit-learn' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef training_basic_classifier(npy_data: Input[Dataset], model: Output[Model]):\n\
+          \    import numpy as np\n    import os\n    from sklearn.linear_model import\
+          \ LogisticRegression\n    import pickle\n\n    X_train = np.load(f'{npy_data.path}/X_train.npy',allow_pickle=True)\n\
+          \    y_train = np.load(f'{npy_data.path}/y_train.npy',allow_pickle=True)\n\
+          \n    classifier = LogisticRegression(max_iter=500)\n    classifier.fit(X_train,y_train)\n\
+          \n    if not os.path.exists(model.path):\n        os.makedirs(model.path)\n\
+          \n    with open(f'{model.path}/model.pkl', \"wb\") as f:\n        pickle.dump(classifier,\
+          \ f)\n\n"
+        image: python:3.9
+pipelineInfo:
+  name: iris-pipeline
+root:
+  dag:
+    tasks:
+      predict-on-test-data:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-predict-on-test-data
+        dependentTasks:
+        - train-test-split
+        - training-basic-classifier
+        inputs:
+          artifacts:
+            model:
+              taskOutputArtifact:
+                outputArtifactKey: model
+                producerTask: training-basic-classifier
+            npy_data:
+              taskOutputArtifact:
+                outputArtifactKey: npy_data
+                producerTask: train-test-split
+        taskInfo:
+          name: predict-on-test-data
+      prepare-data:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-prepare-data
+        taskInfo:
+          name: prepare-data
+      train-test-split:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-train-test-split
+        dependentTasks:
+        - prepare-data
+        inputs:
+          artifacts:
+            df_data:
+              taskOutputArtifact:
+                outputArtifactKey: df_data
+                producerTask: prepare-data
+        taskInfo:
+          name: train-test-split
+      training-basic-classifier:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-training-basic-classifier
+        dependentTasks:
+        - train-test-split
+        inputs:
+          artifacts:
+            npy_data:
+              taskOutputArtifact:
+                outputArtifactKey: npy_data
+                producerTask: train-test-split
+        taskInfo:
+          name: training-basic-classifier
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.12.1
