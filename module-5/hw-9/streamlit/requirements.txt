@@ -1,0 +1,7 @@
+torch
+torchvision
+pytorch-lightning
+Pillow
+streamlit
+pytest
+tokenizers>=0.11.1,<0.14
