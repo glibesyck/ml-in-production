@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: points-checker-app
+  labels:
+    app: points-checker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: points-checker
+  template:
+    metadata:
+      labels:
+        app: points-checker
+    spec:
+      containers:
+      - name: points-checker
+        image: points-checker:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        resources:
+          limits:
+            cpu: "1"
+            memory: "2Gi"
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+        volumeMounts:
+        - name: model-volume
+          mountPath: /app/checkpoints
+      volumes:
+      - name: model-volume
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: points-checker-service
+spec:
+  selector:
+    app: points-checker
+  ports:
+  - port: 80
+    targetPort: 8000
+  type: ClusterIP
