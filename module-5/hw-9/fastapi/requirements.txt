@@ -1,0 +1,9 @@
+fastapi>=0.95.0
+python-multipart
+uvicorn
+torch
+torchvision
+pytorch-lightning
+Pillow
+jinja2
+pytest
