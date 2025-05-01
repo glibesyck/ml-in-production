@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Points Checker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .upload-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .preview {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .preview img {
+            max-width: 300px;
+            border: 1px solid #ddd;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>👀 Are the Points from the Same Figure?</h1>
+    
+    <div class="container">
+        <div class="upload-form">
+            <h3>Upload a 224x224 grayscale image</h3>
+            <input type="file" id="file-upload" accept=".png,.jpg,.jpeg">
+            
+            <div class="preview" id="image-preview">
+                <p>No image selected</p>
+            </div>
+            
+            <button id="predict-btn" disabled>Predict</button>
+            
+            <div class="result" id="result-container">
+                <p id="result-text"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileUpload = document.getElementById('file-upload');
+            const imagePreview = document.getElementById('image-preview');
+            const predictBtn = document.getElementById('predict-btn');
+            const resultContainer = document.getElementById('result-container');
+            const resultText = document.getElementById('result-text');
+            
+            fileUpload.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        imagePreview.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
+                        predictBtn.disabled = false;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            predictBtn.addEventListener('click', function() {
+                const file = fileUpload.files[0];
+                if (!file) return;
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                fetch('/predict/', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    resultContainer.style.display = 'block';
+                    
+                    if (data.prediction) {
+                        resultContainer.className = 'result success';
+                        resultText.innerHTML = '✅ ' + data.message;
+                    } else {
+                        resultContainer.className = 'result error';
+                        resultText.innerHTML = '❌ ' + data.message;
+                    }
+                })
+                .catch(error => {
+                    resultContainer.style.display = 'block';
+                    resultContainer.className = 'result error';
+                    resultText.innerHTML = 'Error: ' + error.message;
+                });
+            });
+        });
+    </script>
+</body>
+</html>
